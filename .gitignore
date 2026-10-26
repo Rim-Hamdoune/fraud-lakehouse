@@ -1,0 +1,31 @@
+# --- Données : jamais dans Git (volumineuses, et régénérables) ---
+data/
+
+# --- Secrets : seul .env.example est versionné ---
+.env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# --- Notebooks ---
+.ipynb_checkpoints/
+
+# --- Fichiers locaux de Spark et MLflow ---
+spark-warehouse/
+metastore_db/
+derby.log
+mlruns/
+mlartifacts/
+
+# --- Éditeurs et systèmes ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*Zone.Identifier
