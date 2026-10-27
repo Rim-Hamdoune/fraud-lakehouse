@@ -1,0 +1,41 @@
+# Plateforme locale du lakehouse : stockage objet compatible S3 (MinIO).
+# Spark tourne en mode local depuis l'environnement uv et lit/écrit dans MinIO.
+name: fraud-lakehouse
+
+services:
+  minio:
+    image: pgsty/minio:RELEASE.2026-02-14T12-00-00Z
+    container_name: fraud-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000" # API S3 : utilisée par Spark
+      - "9001:9001" # console web : http://localhost:9001
+    volumes:
+      - ./data/minio:/data
+    mem_limit: 512m
+
+  minio-init:
+    image: amazon/aws-cli:2.38.6
+    container_name: fraud-minio-init
+    depends_on:
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until aws --endpoint-url http://minio:9000 s3 ls > /dev/null 2>&1; do
+          echo "En attente de MinIO..."
+          sleep 2
+        done
+        if aws --endpoint-url http://minio:9000 s3api head-bucket --bucket ${LAKEHOUSE_BUCKET} 2>/dev/null; then
+          echo "Le bucket ${LAKEHOUSE_BUCKET} existe deja."
+        else
+          aws --endpoint-url http://minio:9000 s3 mb s3://${LAKEHOUSE_BUCKET}
+        fi
+    restart: "no"
